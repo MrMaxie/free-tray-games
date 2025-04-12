@@ -1,0 +1,75 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    outputs:
+      version: ${{ steps.extract-version.outputs.version }}
+      binary_name: ${{ steps.extract-names.outputs.nice_name }}
+      name: ${{ steps.extract-names.outputs.name }}
+      installer_name: ${{ steps.installer-name.outputs.installer_name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: actions/setup-rust@v1
+        with:
+          rust-version: stable
+
+      - name: Extract version from Cargo.toml
+        id: extract-version
+        run: |
+          $version = (Select-String -Path Cargo.toml -Pattern '^version\s*=\s*"(.*)"').Matches.Groups[1].Value
+          echo "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Extract name and nice_name from Cargo.toml
+        id: extract-names
+        run: |
+          $name = (Select-String -Path Cargo.toml -Pattern '^name\s*=\s*"(.*)"').Matches.Groups[1].Value
+          $niceName = (Select-String -Path Cargo.toml -Pattern '^nice_name\s*=\s*"(.*)"').Matches.Groups[1].Value
+          echo "name=$name" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          echo "nice_name=$niceName" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Prepare installer filename
+        id: installer-name
+        run: |
+          $installerName = "${{ steps.extract-names.outputs.nice_name }}-${{ steps.extract-version.outputs.version }}-x64-setup"
+          echo "installer_name=$installerName" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Build release binary
+        run: cargo build --release
+
+      - name: Rename built binary to nice_name
+        run: Rename-Item -Path target\release\${{ steps.extract-names.outputs.name }}.exe -NewName ${{ steps.extract-names.outputs.nice_name }}.exe
+
+      - name: Create ZIP archive of binary
+        run: Compress-Archive -Path target\release\${{ steps.extract-names.outputs.nice_name }}.exe -DestinationPath ${{ steps.extract-names.outputs.nice_name }}.zip
+
+      - name: Compile Inno Setup installer
+        uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
+        with:
+          path: installer.iss
+          options: /DMyAppVersion=${{ steps.extract-version.outputs.version }} /DMyAppName=${{ steps.extract-names.outputs.nice_name }} /DMyAppExeName=${{ steps.extract-names.outputs.nice_name }}.exe /DOutputBaseFilename=${{ steps.installer-name.outputs.installer_name }}
+
+      - name: Generate changelog from conventional commits
+        id: changelog
+        uses: TriPSs/conventional-changelog-action@v4
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          tag-prefix: v
+
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@v1
+        with:
+          body: ${{ steps.changelog.outputs.clean_changelog }}
+          files: |
+            ${{ steps.extract-names.outputs.nice_name }}.zip
+            Output\${{ steps.installer-name.outputs.installer_name }}.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

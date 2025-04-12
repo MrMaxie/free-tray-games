@@ -1,0 +1,35 @@
+name: Tag from Cargo.toml version
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  tag-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract version from Cargo.toml
+        id: cargo-version
+        run: |
+          VERSION=$(grep '^version =' Cargo.toml | sed -E 's/.*"([^"]+)"/\1/')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Check if git tag exists
+        id: tag-check
+        run: |
+          if git rev-parse "v${{ steps.cargo-version.outputs.version }}" >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create git tag
+        if: steps.tag-check.outputs.exists == 'false'
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git tag "v${{ steps.cargo-version.outputs.version }}"
+          git push origin "v${{ steps.cargo-version.outputs.version }}"

@@ -1,0 +1,9 @@
+1 ICON assets/main.ico
+main ICON assets/main.ico
+tray-brand-epic-icon ICON assets/epic.ico
+tray-brand-github-icon ICON assets/github.ico
+tray-brand-gog-icon ICON assets/gog.ico
+tray-brand-steam-icon ICON assets/steam.ico
+tray-notifications-disabled-icon ICON "assets/notifications-disabled.ico"
+tray-notifications-enabled-icon ICON "assets/notifications-enabled.ico"
+tray-refresh-icon ICON assets/refresh.ico
