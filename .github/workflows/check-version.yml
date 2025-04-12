@@ -42,5 +42,6 @@ jobs:
         uses: benc-uk/workflow-dispatch@v1
         with:
           workflow: Build and Release
+          token: ${{ secrets.PAT_TRIGGER }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
