@@ -1,6 +1,4 @@
-# Triggered only via workflow_dispatch from check-version.yml
-
-name: Build and Release
+name: Manual Release
 
 on:
   workflow_dispatch:
@@ -9,13 +7,8 @@ permissions:
   contents: write
 
 jobs:
-  build-and-release:
+  manual-release:
     runs-on: windows-latest
-    outputs:
-      version: ${{ steps.extract-version.outputs.version }}
-      binary_name: ${{ steps.extract-names.outputs.nice_name }}
-      name: ${{ steps.extract-names.outputs.name }}
-      installer_name: ${{ steps.installer-name.outputs.installer_name }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -44,6 +37,14 @@ jobs:
         run: |
           $installerName = "${{ steps.extract-names.outputs.nice_name }}-${{ steps.extract-version.outputs.version }}-x64-setup"
           echo "installer_name=$installerName" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Create tag for version
+        continue-on-error: true
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git tag "v${{ steps.extract-version.outputs.version }}"
+          git push origin "v${{ steps.extract-version.outputs.version }}"
 
       - name: Build release binary
         run: cargo build --release
