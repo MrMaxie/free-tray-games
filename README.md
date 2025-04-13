@@ -32,4 +32,4 @@ This application runs quietly in the system tray and helps you stay updated on f
 
 ## 📦 License
 
-Licensed under the **Apache 2.0** license. See [`LICENSE.rtf`](LICENSE.rtf) for details.
+Licensed under the **Apache 2.0** license. See [`LICENSE`](LICENSE.txt) for details.
