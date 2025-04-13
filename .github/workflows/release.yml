@@ -69,6 +69,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           body: ${{ steps.changelog.outputs.clean_changelog }}
+          tag_name: v${{ steps.extract-version.outputs.version }}
           files: |
             ${{ steps.extract-names.outputs.nice_name }}.zip
             Output/${{ steps.installer-name.outputs.installer_name }}.exe
