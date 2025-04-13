@@ -64,6 +64,9 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           tag-prefix: v
+          skip-version-file: true
+          skip-commit: true
+          skip-tag: true
 
       - name: Upload Release Assets
         uses: softprops/action-gh-release@v1
