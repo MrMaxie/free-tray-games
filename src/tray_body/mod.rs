@@ -202,12 +202,12 @@ impl TrayBody {
                             item.fMask |= MIIM_BITMAP;
                             item.hbmpItem = hbmp;
                         }
-                        Err(e) => {
-                            eprintln!("⚠️ Nie udało się załadować ikony: {}", e);
+                        Err(_) => {
+                            bail!("Error loading icon");
                         }
                     }
                 } else {
-                    eprintln!("⚠️ Nie udało się załadować ikony: {}", resource_name);
+                    bail!("Error loading icon");
                 }
             }
         }

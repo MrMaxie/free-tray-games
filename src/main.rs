@@ -19,6 +19,8 @@ use tray::{Message, Tray};
 mod logger;
 use logger::init_logger;
 
+mod notify_body;
+
 #[tokio::main]
 async fn main() -> Result<()> {
     init_logger()?;

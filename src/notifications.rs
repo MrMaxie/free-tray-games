@@ -1,9 +1,9 @@
-use std::{collections::HashMap, env, fs::{create_dir_all, File}, io::{BufReader, BufWriter}, path::PathBuf, sync::Arc};
+use std::{collections::HashMap, env, fs::{create_dir_all, File}, io::{BufReader, BufWriter, Write}, path::PathBuf, sync::Arc};
 use chrono::{DateTime, Duration, Utc};
 use tokio::sync::Mutex;
-use win_toast_notify::{ImagePlacement, WinToastNotify};
 use anyhow::{Result, Context};
 
+use crate::notify_body::WinToastNotify;
 use crate::{config::Config, games::{Game, Games}};
 
 type NotifiedMap = HashMap<usize, DateTime<Utc>>;
@@ -66,11 +66,10 @@ impl Notifications {
 
         let image_path = Self::download_image(&game.image).await.context("Failed to download image")?;
 
-        WinToastNotify::new()
-            .set_app_id(Config::get_app_id().as_str())
+        WinToastNotify::new(Config::get_app_id().as_str())
             .set_title(format!("{} ({})", game.title.as_str(), game.platform.as_str()).as_str())
             .set_messages(vec!["Click to claim"])
-            .set_image(&image_path, ImagePlacement::Top)
+            .set_image(&image_path)
             .set_open(game.open_giveaway_url.as_str())
             .show()
             .expect("Failed to show notification");
@@ -95,7 +94,7 @@ impl Notifications {
         };
 
         let reader = BufReader::new(file);
-        let raw: HashMap<usize, i64> = bincode::decode_from_reader(reader, bincode::config::standard()).unwrap_or_default();
+        let raw : HashMap<usize, i64> = serde_json::from_reader(reader).unwrap_or_default();
         let raw: NotifiedMap = raw.into_iter()
             .map(|(id, ts)| (id, DateTime::<Utc>::from_timestamp(ts, 0).unwrap()))
             .collect();
@@ -113,8 +112,8 @@ impl Notifications {
 
     pub fn get_notifications_log_path() -> PathBuf {
         let mut exe_path = env::current_exe().unwrap();
-        exe_path.set_file_name("notifications_log");
-        exe_path.set_extension("bin");
+        exe_path.set_file_name("notifications.log");
+        exe_path.set_extension("json");
         exe_path
     }
 
@@ -158,8 +157,8 @@ impl Notifications {
             .map(|(id, dt)| (*id, dt.timestamp()))
             .collect();
 
-        bincode::encode_into_std_write(&timestamp_map, &mut writer, bincode::config::standard())
-            .expect("serialization failed");
+        let json = serde_json::to_string(&timestamp_map).expect("notifications log serialization failed");
+        writer.write_all(json.as_bytes()).expect("notifications log write failed");
 
         Ok(())
     }
