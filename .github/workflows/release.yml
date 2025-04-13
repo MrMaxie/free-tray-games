@@ -58,16 +58,6 @@ jobs:
           path: installer.iss
           options: /DMyAppVersion=${{ steps.extract-version.outputs.version }} /DMyAppName=${{ steps.extract-names.outputs.nice_name }} /DMyAppExeName=${{ steps.extract-names.outputs.nice_name }}.exe /DOutputBaseFilename=${{ steps.installer-name.outputs.installer_name }}
 
-      - name: Generate changelog from conventional commits
-        id: changelog
-        uses: TriPSs/conventional-changelog-action@v4
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          tag-prefix: v
-          skip-version-file: true
-          skip-commit: true
-          skip-tag: true
-
       - name: Upload Release Assets
         uses: softprops/action-gh-release@v1
         with:
