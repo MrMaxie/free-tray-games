@@ -20,7 +20,7 @@ DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
 LicenseFile=.\LICENSE.rtf
 PrivilegesRequired=lowest
-OutputBaseFilename=FreeTrayGamesInstaller
+OutputBaseFilename={#OutputBaseFilename}
 SolidCompression=yes
 WizardStyle=modern
 
