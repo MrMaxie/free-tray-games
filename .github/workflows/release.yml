@@ -13,16 +13,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Rust
-        uses: actions/setup-rust@v1
-        with:
-          rust-version: stable
+      - name: Update Rust toolchain
+        run: rustup update
 
       - name: Extract version from Cargo.toml
         id: extract-version
         run: |
           $version = (Select-String -Path Cargo.toml -Pattern '^version\s*=\s*"(.*)"').Matches.Groups[1].Value
           echo "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Create tag for version
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git tag "v${{ steps.extract-version.outputs.version }}"
+          git push origin "v${{ steps.extract-version.outputs.version }}"
 
       - name: Extract name and nice_name from Cargo.toml
         id: extract-names
@@ -37,14 +42,6 @@ jobs:
         run: |
           $installerName = "${{ steps.extract-names.outputs.nice_name }}-${{ steps.extract-version.outputs.version }}-x64-setup"
           echo "installer_name=$installerName" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-
-      - name: Create tag for version
-        continue-on-error: true
-        run: |
-          git config user.name "github-actions"
-          git config user.email "actions@github.com"
-          git tag "v${{ steps.extract-version.outputs.version }}"
-          git push origin "v${{ steps.extract-version.outputs.version }}"
 
       - name: Build release binary
         run: cargo build --release
@@ -74,6 +71,6 @@ jobs:
           body: ${{ steps.changelog.outputs.clean_changelog }}
           files: |
             ${{ steps.extract-names.outputs.nice_name }}.zip
-            Output\${{ steps.installer-name.outputs.installer_name }}.exe
+            Output/${{ steps.installer-name.outputs.installer_name }}.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
